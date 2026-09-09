@@ -1,0 +1,9 @@
+{
+  "name": "my-book-shelf",
+  "private": true,
+  "version": "1.0.0",
+  "type": "module",
+  "scripts": {
+    "build": "node scripts/generate-books.mjs"
+  }
+}

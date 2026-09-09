@@ -1,0 +1,111 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <meta name="theme-color" content="#0b0b0c">
+  <meta name="description" content="My Book Shelf — a personal library for the books you read.">
+  <title>My Book Shelf</title>
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=DM+Mono:wght@400;500&family=Manrope:wght@400;500;600;700;800&display=swap" rel="stylesheet">
+  <link rel="stylesheet" href="src/styles.css">
+</head>
+<body>
+  <div class="app-shell">
+    <header class="topbar">
+      <a class="brand" href="./" aria-label="My Book Shelf home"><span class="brand-mark">M</span><span>my book shelf</span></a>
+      <div class="library-count" id="libraryCount"><span>0</span> books</div>
+    </header>
+
+    <main class="main-content">
+      <section class="hero">
+        <div>
+          <p class="eyebrow">PERSONAL LIBRARY</p>
+          <h1>A shelf for<br><em>everything you read.</em></h1>
+          <p class="hero-copy">A quiet place for your reading life. Add PDFs to the <code>Books</code> folder, push to GitHub, and your collection is rebuilt automatically on Vercel.</p>
+        </div>
+        <div class="search-wrap">
+          <label class="search-label" for="bookSearch">Find a book</label>
+          <div class="search-box">
+            <span aria-hidden="true">⌕</span>
+            <input id="bookSearch" type="search" placeholder="Search titles..." autocomplete="off">
+            <button id="clearSearch" class="clear-button" type="button" aria-label="Clear search" hidden>×</button>
+          </div>
+        </div>
+      </section>
+
+      <div class="section-line"><span id="sectionLabel">Your collection</span><span class="section-rule"></span></div>
+      <div id="status" class="status">Loading your shelf…</div>
+      <section id="bookGrid" class="book-grid" aria-label="Book collection"></section>
+    </main>
+
+    <footer class="footer">
+      <span>MY BOOK SHELF</span><span>PDF library · GitHub + Vercel</span>
+    </footer>
+  </div>
+
+<script>
+(() => {
+  const count = document.getElementById('libraryCount');
+  const grid = document.getElementById('bookGrid');
+  const status = document.getElementById('status');
+  const search = document.getElementById('bookSearch');
+  const clear = document.getElementById('clearSearch');
+  const sectionLabel = document.getElementById('sectionLabel');
+  let books = [];
+
+  const escapeHtml = (value) => String(value).replace(/[&<>'"]/g, c => ({ '&':'&amp;', '<':'&lt;', '>':'&gt;', "'":'&#39;', '"':'&quot;' })[c]);
+  const plural = (n, word) => `${n.toLocaleString()} ${word}${n === 1 ? '' : 's'}`;
+
+  function render() {
+    const needle = search.value.trim().toLowerCase();
+    const filtered = needle ? books.filter(b => b.title.toLowerCase().includes(needle)) : books;
+    sectionLabel.textContent = needle ? `${filtered.length.toLocaleString()} result${filtered.length === 1 ? '' : 's'}` : 'Your collection';
+    grid.innerHTML = filtered.map((book, index) => `
+      <a class="book-card" href="${book.url}" target="_blank" rel="noopener noreferrer" title="Open ${escapeHtml(book.title)}">
+        <div class="book-cover">
+          <div class="book-number">${String(index + 1).padStart(2, '0')}</div>
+          <div class="book-decoration" aria-hidden="true"><span></span><span></span><span></span></div>
+          <div class="book-title">${escapeHtml(book.title)}</div>
+          <div class="book-open">OPEN ↗</div>
+        </div>
+      </a>`).join('');
+
+    status.hidden = true;
+    if (!filtered.length) {
+      status.hidden = false;
+      status.className = 'status empty-state';
+      status.innerHTML = books.length
+        ? '<div class="empty-icon">⌕</div><h2>No books found</h2><p>Try a different title.</p>'
+        : '<div class="empty-icon">+</div><h2>Your shelf is ready</h2><p>Put a PDF inside a folder under <code>Books/</code>, then build or deploy the project.</p>';
+    }
+  }
+
+  search.addEventListener('input', () => {
+    clear.hidden = !search.value;
+    render();
+  });
+  clear.addEventListener('click', () => {
+    search.value = '';
+    clear.hidden = true;
+    search.focus();
+    render();
+  });
+
+  fetch('books.json', { cache: 'no-store' })
+    .then(r => { if (!r.ok) throw new Error(); return r.json(); })
+    .then(data => {
+      books = Array.isArray(data.books) ? data.books : [];
+      count.innerHTML = `<span>${books.length.toLocaleString()}</span> ${plural(books.length, 'book').replace(/^\S+ /, '')}`;
+      render();
+    })
+    .catch(() => {
+      status.hidden = false;
+      status.className = 'status error';
+      status.textContent = 'Could not load the library manifest. Run the build command after adding books.';
+    });
+})();
+</script>
+</body>
+</html>
