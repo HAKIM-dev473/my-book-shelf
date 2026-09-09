@@ -18,7 +18,9 @@ for (const entry of entries) {
 
   // One PDF per book folder is the intended structure. Use the first PDF if more exist.
   const pdf = pdfs.sort((a,b) => a.name.localeCompare(b.name, undefined, { sensitivity:'base', numeric:true }))[0];
-  const title = path.basename(pdf.name, '.pdf').replace(/[_-]+/g, ' ').replace(/\s+/g, ' ').trim() || folder;
+  // Keep the filename exactly as the book title (only remove the .pdf extension).
+  // Spaces, underscores, hyphens, parentheses, and other characters are preserved.
+  const title = path.basename(pdf.name, path.extname(pdf.name)) || folder;
   books.push({
     id: folder,
     title,
